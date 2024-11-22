@@ -1,3 +1,3 @@
-module github.com/ndara/concurrency-go
+module github.com/ndarayudha/concurrency-in-go
 
-go 1.22.0
+go 1.21.13

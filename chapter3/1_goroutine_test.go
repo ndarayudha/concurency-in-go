@@ -34,7 +34,7 @@ func TestGoroutine(t *testing.T) {
 	//
 	// The fork-join model is a logical model of how concurrency is performed.
 	// It does describe a C program that calls fork and then wait, but only at a logical level.
-	// The fork-join model says nothing about howmemory is managed.
+	// The fork-join model says nothing about how memory is managed.
 
 	// Here, the sayHello function will be run on its own goroutine, while the rest of the
 	// program continues executing. In this example, there is no join point. The goroutine
@@ -55,8 +55,8 @@ func TestSynchronization(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	sayWorld := func() {
-		wg.Done()
 		fmt.Println("world")
+		wg.Done()
 	}
 	go sayWorld()
 	// the wg.Wait() block the main goroutine until the goroutine
@@ -64,13 +64,15 @@ func TestSynchronization(t *testing.T) {
 	wg.Wait() // this is the join point
 }
 
-func TestClosure(t *testing.T) {
+func TestClosureV1(t *testing.T) {
 	var wg sync.WaitGroup
 	yeah := "Yeah"
+	fmt.Printf("the address of yeah outer: %v\n", &yeah)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		fmt.Printf("the address of yeah in goroutine: %v\n", &yeah)
 		yeah = "Heyyy" // it will change the value of "yeah"
 	}()
 	wg.Wait()
@@ -82,13 +84,29 @@ func TestClosure(t *testing.T) {
 // For go 1.22, the result of code bellow is print all the stirng in a slice (not duplicated)
 //
 // For go < 1.22 it will print just one of the data in a slice
+
+// In this example, the
+// goroutine is running a closure that has closed over the iteration variable salutation,
+// which has a type of string. As our loop iterates, salutation is being assigned to the
+// next string value in the slice literal. Because the goroutines being scheduled may run
+// at any point in time in the future, it is undetermined what values will be printed from
+// within the goroutine. On my machine, there is a high probability the loop will exit
+// before the goroutines are begun. This means the salutation variable falls out of
+// scope. What happens then? Can the goroutines still reference something that has
+// fallen out of scope? Won’t the goroutines be accessing memory that has potentially
+// been garbage collected?
+
+// The Go runtime is observant enough to know that a reference to the salutation variable is still being
+// held, and therefore will transfer the memory to the heap so that the goroutines can
+// continue to access it.
 func TestClosureV2(t *testing.T) {
 	var wg sync.WaitGroup
 	for _, salutation := range []string{"hello", "greetings", "good day"} {
+		fmt.Printf("Loop variable address: %p, value: %s\n", &salutation, salutation)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			fmt.Println(salutation)
+			fmt.Printf("Goroutine variable address: %p, value: %s\n", &salutation, salutation)
 		}()
 	}
 	wg.Wait()
@@ -100,15 +118,16 @@ func TestClosureV2(t *testing.T) {
 // it still have to consider about synchronization
 //
 // It can use either synchronization access to shared memory of the goroutine access,
-// or use CSP primitives to SHARE MEMORY BY COMMUNICATION(mentioned in golang docs)
+// or use CSP primitives to SHARE MEMORY BY COMMUNICATION (mentioned in golang docs)
 func TestClosureV3(t *testing.T) {
 	var wg sync.WaitGroup
 	for _, salutation := range []string{"hello", "greetings", "good day"} {
+		fmt.Printf("Loop variable address: %p, value: %s\n", &salutation, salutation)
 		wg.Add(1)
-		go func(salutation string) {
+		go func(salutation string) { // declare the input parameter
 			defer wg.Done()
-			fmt.Println(salutation)
-		}(salutation)
+			fmt.Printf("Goroutine variable address: %p, value: %s\n", &salutation, salutation)
+		}(salutation) // copying the value by passing the variable
 	}
 	wg.Wait()
 }
@@ -173,10 +192,10 @@ func BenchmarkContextSwitch(b *testing.B) {
 		}
 	}
 
-  wg.Add(2)
-  go sender()
-  go reciver()
-  b.StartTimer()
-  close(begin)
-  wg.Wait()
+	wg.Add(2)
+	go sender()
+	go reciver()
+	b.StartTimer()
+	close(begin)
+	wg.Wait()
 }
