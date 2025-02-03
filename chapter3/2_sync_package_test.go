@@ -98,7 +98,7 @@ func TestMutext(t *testing.T) {
 		arithmetic.Add(1)
 		go func() {
 			defer arithmetic.Done()
-			decrement()
+      decrement()
 		}()
 	}
 

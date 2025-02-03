@@ -137,14 +137,15 @@ func TestChanOwnership(t *testing.T) {
 	// 3. Close the channel
 	// 4. Enncapsulate the previous things in this list and expose via a reader channel
 	chanOwner := func() <-chan int {
-		resultStream := make(chan int, 5) // Owner creates channel
-		go func() {
-			defer close(resultStream) // Owner handles cleanup
-			for i := 0; i <= 5; i++ {
-				resultStream <- i // Owner writes data
+		resultStream := make(chan int, 5)
+		go func() { // channel owner
+			defer close(resultStream) // responsibility for channel owner
+			for i := 0; i < 5; i++ {
+				resultStream <- i
 			}
 		}()
-		return resultStream // Expose read-only channel}
+
+		return resultStream
 	}
 
 	resultStream := chanOwner()
