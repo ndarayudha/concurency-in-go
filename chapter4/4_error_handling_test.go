@@ -72,15 +72,15 @@ func TestErrorV2(t *testing.T) {
 		return results
 	}
 
-  done := make(chan interface{})
-  defer close(done)
+	done := make(chan interface{})
+	defer close(done)
 
-  urls := []string{"https://www.google.com", "https://badhost"}
-  for result := range checkStatus(done, urls...) {
-    if result.Error != nil {
-      fmt.Printf("error: %v", result.Error)
-      continue
-    }
-    fmt.Printf("Response: %v\n", result.Resposne.Status)
-  }
+	urls := []string{"https://www.google.com", "https://badhost"}
+	for result := range checkStatus(done, urls...) {
+		if result.Error != nil {
+			fmt.Printf("error: %v", result.Error)
+			continue
+		}
+		fmt.Printf("Response: %v\n", result.Resposne.Status)
+	}
 }
